@@ -1,0 +1,57 @@
+version: "3.9"
+
+services:
+  api:
+    build: .
+    restart: always
+    container_name: hi_exchange_be
+    ports:
+      - "${APP_PORT}:${APP_PORT}"
+    volumes:
+      - .:/hi_exchange_be
+      - ./node_modules:/hi_exchange_be/node_modules
+    env_file:
+      - ./.env
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15.1-alpine
+    container_name: hi_exchange_be_db
+    volumes:
+      - db-data:/var/lib/postgresql/data/
+    ports:
+      - "5435:5432"
+    env_file:
+      - ./.env
+    environment:
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_USER: ${DATABASE_USER}
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U $$DATABASE_USER -d $$DATABASE_NAME'
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: hi_exchange_be_db_admin
+    restart: always
+    env_file:
+      - ./.env
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+
+volumes:
+  db-data:
+  pgadmin-data:
